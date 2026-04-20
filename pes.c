@@ -31,12 +31,6 @@ void cmd_init(void) {
         }
     }
 
-    // 🔥 FIX: create index file
-    if (access(".pes/index", F_OK) != 0) {
-        FILE *f = fopen(".pes/index", "w");
-        if (f) fclose(f);
-    }
-
     printf("Initialized empty PES repository in %s/\n", PES_DIR);
 }
 
