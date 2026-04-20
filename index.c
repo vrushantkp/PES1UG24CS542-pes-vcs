@@ -51,18 +51,27 @@ int index_save(Index *index) {
 // Add file to index
 int index_add(Index *index, const char *path) {
     FILE *f = fopen(path, "rb");
-    if (!f) return -1;
+    if (!f) {
+        perror("file open failed");
+        return -1;
+    }
 
     fseek(f, 0, SEEK_END);
     long size = ftell(f);
     fseek(f, 0, SEEK_SET);
 
     void *data = malloc(size);
+    if (!data) {
+        fclose(f);
+        return -1;
+    }
+
     fread(data, 1, size, f);
     fclose(f);
 
     ObjectID id;
     if (object_write(OBJ_BLOB, data, size, &id) != 0) {
+        perror("object_write failed");
         free(data);
         return -1;
     }
@@ -70,12 +79,18 @@ int index_add(Index *index, const char *path) {
     free(data);
 
     IndexEntry entry;
-    strncpy(entry.path, path, sizeof(entry.path));
+    memset(&entry, 0, sizeof(entry));
+    strncpy(entry.path, path, sizeof(entry.path) - 1);
     entry.id = id;
 
     index->entries[index->count++] = entry;
 
-    return index_save(index);
+    if (index_save(index) != 0) {
+        perror("index_save failed");
+        return -1;
+    }
+
+    return 0;
 }
 
 // Print status
